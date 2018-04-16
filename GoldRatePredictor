@@ -1,0 +1,52 @@
+# data from : http://datahub.io/core/gold-prices#python
+from datapackage import Package
+import matplotlib.pyplot as plt
+from datetime import date, datetime
+from scipy.stats import linregress
+
+package = Package('https://datahub.io/core/gold-prices/datapackage.json')
+
+resources = package.descriptor['resources']
+
+resourceList = [resources[x]['name'] for x in range(0, len(resources))]
+
+resources = package.resources
+
+fetched_resource = []
+xyear = []
+xyearplot = []
+yrate = []
+
+if resources[1].tabular :
+    fetched_resource = resources[1].read()
+
+for x in fetched_resource:
+    xyear.append(int(datetime.strptime(str(x[0]), '%Y-%m-%d').strftime("%s")))
+    xyearplot.append(x[0])
+    yrate.append(int(x[1]))
+
+#linregress(xyear, yrate)
+regression_data = linregress(xyear, yrate)
+
+def calculate_y(regression_data,xdata):
+    #y=mx+b
+    return ( regression_data.slope * xdata ) + regression_data.intercept
+
+x='Y'
+while x == 'Y' or x == 'y' :
+    xdata = input("Enter date ( Y-m-d ) ? :")
+    xint = int(datetime.strptime(str(xdata), '%Y-%m-%d').strftime("%s"))
+    print(calculate_y(regression_data,xint))
+    #print(regression_data)
+    confidence_value = 1.962 * regression_data.stderr
+    plt.scatter(xyear, yrate, label='Gold Price of Year', color='k', s=3, marker="o")
+    plt.scatter([xint], [calculate_y(regression_data,xint)], color ='r')
+    plt.scatter([xint], [calculate_y(regression_data, xint) + confidence_value])
+    plt.scatter([xint], [calculate_y(regression_data, xint) - confidence_value])
+    plt.xlabel('Year')
+    plt.ylabel('Gold Rate')
+    plt.title('Year wise gold rate')
+    plt.legend()
+    plt.show()
+
+    x = input("Find another value ? Y/N")
